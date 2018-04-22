@@ -6,6 +6,9 @@ const int echoPin = 5;
 const String ssid = "ryo";
 const String password = "15111994";
 
+float data[50][2]={0};
+float distance[2]={0};
+int count = 0;
 String D;
 SoftwareSerial esp8266Module(2, 3);
 String server = "192.168.43.212"; //this ip is for api.thinhspeak.com
@@ -88,16 +91,6 @@ void httpGet () {
   }
 }
 
-
-
-
-void loop()
-{
-  calculateDistance();
-  //delay(1000);
-  httpGet();
-}
-
 void calculateDistance()
 {
   float duration;
@@ -117,8 +110,11 @@ void calculateDistance()
   Serial.print(cm);
   Serial.print("cm");
   Serial.println();
-  D = "cm=" + String(cm) + "&inch=" + String(inches);
-  delay(1000); 
+  data[count][0] = inches;
+  data[count][1] = cm;
+  //D = "cm=" + String(cm) + "&inch=" + String(inches);
+  delay(100); 
+  count++;
 }
 
 float microsecondsToInches(long microseconds)
@@ -132,3 +128,35 @@ float microsecondsToCentimeters(long microseconds)
   float cm = microseconds/29.0/2.0; 
   return cm;
 }
+
+void average(){
+  float inch=0, cm=0;
+  for(int i=0;i<50;i++){
+    inch = inch + data[i][0];
+    cm = cm + data[i][1];
+    data[i][0]=data[i][0]=0;
+  }
+  inch = inch / 50.0;
+  cm = cm / 50.0;
+  distance[0]=inch;
+  distance[1]=cm;
+  D = "cm=" + String(cm) + "&inch=" + String(inch);
+}
+
+
+void loop()
+{
+  calculateDistance();
+  if(count > 50)
+  {
+    average();
+    distance[0]=distance[1]=0;
+    count = 0;
+    delay(2000);
+    httpGet();
+  }
+  //delay(1000);
+  
+}
+
+
